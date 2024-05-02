@@ -1,23 +1,40 @@
-"use client"
+'use client'
 
 import MaxWidthWrapper from "@/components/MaxWidthWrapper";
 import { trpc } from "@/app/_trpc/client";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
 
-const Page = () => {
+function Search() {
     const router = useRouter();
-
+    
     const searchParams = useSearchParams();
     const origin = searchParams.get('origin');
 
-    const {data, isLoading} = trpc.authCallback.useQuery();
+    const {data, isLoading} = trpc.authCallback.useQuery(undefined, {
+        retry: true,
+        retryDelay: 500
+    });
 
-    if (isLoading) return <MaxWidthWrapper>Authenticating...</MaxWidthWrapper>;
-    if (data?.success) {
-        router.push(origin ? `/${origin}` : '/dashboard');
-    } else {
-        router.push('/sign-in')
-    }
+    useEffect(() => {
+        if (data?.success) {
+            router.push(origin ? `/${origin}` : '/dashboard');
+        } else {
+            router.push('/sign-in')
+        }
+    }, [data, isLoading, origin, router])
+
+
+    return <MaxWidthWrapper>Authenticating...</MaxWidthWrapper>
+}
+
+const Page = () => {
+
+    return (
+        <Suspense>
+            <Search />
+        </Suspense>
+    );
 }
 
 export default Page;
